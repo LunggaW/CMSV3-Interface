@@ -1,0 +1,3 @@
+Install-Package Quartz
+Install-Package NLog -Version 4.3.5
+Install-Package NLog.Config
