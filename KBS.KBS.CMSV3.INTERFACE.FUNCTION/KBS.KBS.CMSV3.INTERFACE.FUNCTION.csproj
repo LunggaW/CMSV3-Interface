@@ -51,6 +51,12 @@
     <Compile Include="Function.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\KBS.KBS.CMSV3.INTERFACE.DATAMODEL\KBS.KBS.CMSV3.INTERFACE.DATAMODEL.csproj">
+      <Project>{0C961FB3-753B-46D4-A728-B86C0A9A9D5D}</Project>
+      <Name>KBS.KBS.CMSV3.INTERFACE.DATAMODEL</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

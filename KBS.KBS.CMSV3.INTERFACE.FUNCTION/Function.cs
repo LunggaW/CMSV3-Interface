@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
+using KBS.KBS.CMSV3.INTERFACE.DATAMODEL;
 using NLog;
 using Oracle.DataAccess.Client;
 
@@ -528,5 +531,227 @@ namespace KBS.KBS.CMSV3.INTERFACE.FUNCTION
             }
         }
 
+
+        public string Encrypt(string clearText)
+        {
+            string EncryptionKey = "PT.KDSBS";
+            byte[] clearBytes = Encoding.Unicode.GetBytes(clearText);
+            using (Aes encryptor = Aes.Create())
+            {
+                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+                encryptor.Key = pdb.GetBytes(32);
+                encryptor.IV = pdb.GetBytes(16);
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateEncryptor(), CryptoStreamMode.Write))
+                    {
+                        cs.Write(clearBytes, 0, clearBytes.Length);
+                        cs.Close();
+                    }
+                    clearText = Convert.ToBase64String(ms.ToArray());
+                }
+            }
+            return clearText;
+        }
+
+
+        public string Decrypt(string cipherText)
+        {
+            string EncryptionKey = "PT.KDSBS";
+            byte[] cipherBytes = Convert.FromBase64String(cipherText);
+            using (Aes encryptor = Aes.Create())
+            {
+                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+                encryptor.Key = pdb.GetBytes(32);
+                encryptor.IV = pdb.GetBytes(16);
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
+                    {
+                        cs.Write(cipherBytes, 0, cipherBytes.Length);
+                        cs.Close();
+                    }
+                    cipherText = Encoding.Unicode.GetString(ms.ToArray());
+                }
+            }
+            return cipherText;
+        }
+
+        public License ParseLicenseText(string DecryptedText)
+        {
+            string[] values = DecryptedText.Split("|".ToCharArray());
+
+            License license = new License();
+
+            license.CompanyName = values[0];
+            license.StoreTotal = values[1];
+            license.Val1 = values[3];
+            license.Val2 = values[4];
+            license.Val3 = values[5];
+            license.EndDate = DateTime.Parse(values[2]);
+
+            return license;
+        }
+
+        public string GetLicense()
+        {
+            logger.Debug("Start Connect");
+            this.ConnectOracle();
+            logger.Debug("End Connect");
+            try
+            {
+                String Value = "";
+                OracleCommand cmd = new OracleCommand();
+                cmd.Connection = con;
+                cmd.CommandText = "select KDSCMSDLDESC from KDSCMSDL where KDSCMSDLID = 1";
+
+                logger.Debug("Execute Command");
+                logger.Debug(cmd.CommandText.ToString());
+
+                OracleDataReader dr = cmd.ExecuteReader();
+                //OracleDataReader dr = cmd.ExecuteReader();
+                logger.Debug("End Execute Command");
+
+                while (dr.Read())
+                {
+                    Value = dr["KDSCMSDLDESC"].ToString();
+                }
+                logger.Debug("Start Close Connection");
+                this.CloseOracle();
+                logger.Debug("End Close Connection");
+                return Value;
+            }
+            catch (Exception e)
+            {
+                logger.Error("GetLicense");
+                logger.Error(e.Message);
+                this.CloseOracle();
+                return null;
+            }
+        }
+
+        public string DisableAllStoreFlagandStatus()
+        {
+            logger.Debug("Start Connect");
+            this.ConnectOracle();
+            logger.Debug("End Connect");
+            try
+            {
+                String Value = "";
+                OracleCommand cmd = new OracleCommand();
+                cmd.Connection = con;
+                cmd.CommandText = "update kdscmssite " +
+                                  "set sitesiteflag = 0 " +
+                                  ", SITESITESTATUS = 0 ";
+
+
+                logger.Debug("Execute Command");
+                logger.Debug(cmd.CommandText.ToString());
+
+                cmd.ExecuteNonQuery();
+                //OracleDataReader dr = cmd.ExecuteReader();
+                logger.Debug("End Execute Command");
+
+
+                logger.Debug("Start Close Connection");
+                this.CloseOracle();
+                logger.Debug("End Close Connection");
+                Value = Decrypt(Value);
+                return Value;
+            }
+            catch (Exception e)
+            {
+                logger.Error("DisableAllStoreFlagandStatus");
+                logger.Error(e.Message);
+                this.CloseOracle();
+                return null;
+            }
+
+
+        }
+
+        public string ValidateLicenseEndDate(DateTime EndDate)
+        {
+            if (EndDate > DateTime.Now)
+            {
+                logger.Debug("Start Connect");
+                this.ConnectOracle();
+                logger.Debug("End Connect");
+                try
+                {
+                    String Value = "";
+                    OracleCommand cmd = new OracleCommand();
+                    cmd.Connection = con;
+                    cmd.CommandText = "update kdscmssite set SITESITESTATUS = 1";
+
+                    logger.Debug("Execute Command");
+                    logger.Debug(cmd.CommandText.ToString());
+
+                    cmd.ExecuteNonQuery();
+                    //OracleDataReader dr = cmd.ExecuteReader();
+                    logger.Debug("End Execute Command");
+
+
+                    logger.Debug("Start Close Connection");
+                    this.CloseOracle();
+                    logger.Debug("End Close Connection");
+                    Value = Decrypt(Value);
+                    return Value;
+                }
+                catch (Exception e)
+                {
+                    logger.Error("ValidateLicenseEndDate");
+                    logger.Error(e.Message);
+                    this.CloseOracle();
+                    return null;
+                }
+            }
+            else
+            {
+                return "expired";
+            }
+            
+        }
+
+        public string ValidateLicenseStore(int StoreTotal)
+        {
+                logger.Debug("Start Connect");
+                this.ConnectOracle();
+                logger.Debug("End Connect");
+                try
+                {
+                    String Value = "";
+                    OracleCommand cmd = new OracleCommand();
+                    cmd.Connection = con;
+                    cmd.CommandText = "update kdscmssite " +
+                                      "set sitesiteflag = 1 " +
+                                      "where  rownum <= :TotalStore ";
+
+                    cmd.Parameters.Add(new OracleParameter(":TotalStore", OracleDbType.Varchar2)).Value = StoreTotal;
+
+                    logger.Debug("Execute Command");
+                    logger.Debug(cmd.CommandText.ToString());
+
+                    cmd.ExecuteNonQuery();
+                    //OracleDataReader dr = cmd.ExecuteReader();
+                    logger.Debug("End Execute Command");
+
+
+                    logger.Debug("Start Close Connection");
+                    this.CloseOracle();
+                    logger.Debug("End Close Connection");
+                    Value = Decrypt(Value);
+                    return Value;
+                }
+                catch (Exception e)
+                {
+                    logger.Error("GetLicense");
+                    logger.Error(e.Message);
+                    this.CloseOracle();
+                    return null;
+                }
+            
+
+        }
     }
 }
