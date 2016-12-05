@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{AB680501-AC20-44FE-9B3B-E0C5DBFFEEDE}</ProjectGuid>
+    <ProjectGuid>{D21AC80B-0EB3-4891-9ECB-5F1B3CB8678D}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>KBS.KBS.CMSV3.INTERFACE.SERVICES.TRANS</RootNamespace>
-    <AssemblyName>KBS.KBS.CMSV3.INTERFACE.SERVICES.TRANS</AssemblyName>
+    <RootNamespace>KBS.KBS.CMSV3.INTERFACE.SERVICES.SALES</RootNamespace>
+    <AssemblyName>KBS.KBS.CMSV3.INTERFACE.SERVICES.SALES</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
@@ -35,25 +35,18 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Common.Logging, Version=3.0.0.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+    <Reference Include="Common.Logging">
       <HintPath>..\packages\Common.Logging.3.0.0\lib\net40\Common.Logging.dll</HintPath>
-      <Private>True</Private>
     </Reference>
-    <Reference Include="Common.Logging.Core, Version=3.0.0.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+    <Reference Include="Common.Logging.Core">
       <HintPath>..\packages\Common.Logging.Core.3.0.0\lib\net40\Common.Logging.Core.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NLog.4.3.5\lib\net40\NLog.dll</HintPath>
+      <HintPath>..\packages\NLog.4.3.10\lib\net40\NLog.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Oracle.DataAccess, Version=4.112.3.0, Culture=neutral, PublicKeyToken=89b483f429c47342, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Dependency\Oracle.DataAccess.dll</HintPath>
-    </Reference>
-    <Reference Include="Quartz, Version=2.3.3.0, Culture=neutral, PublicKeyToken=f6b8c98a402cc8a4, processorArchitecture=MSIL">
+    <Reference Include="Quartz">
       <HintPath>..\packages\Quartz.2.3.3\lib\net40-client\Quartz.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration.Install" />
@@ -67,20 +60,35 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ProjectInstallerOracle.cs">
+    <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="ProjectInstallerOracle.Designer.cs">
-      <DependentUpon>ProjectInstallerOracle.cs</DependentUpon>
+    <Compile Include="ProjectInstaller.Designer.cs">
+      <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </Compile>
-    <Compile Include="ServiceOracle.cs">
+    <Compile Include="ServiceCMStoSIS.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="ServiceOracle.Designer.cs">
-      <DependentUpon>ServiceOracle.cs</DependentUpon>
+    <Compile Include="ServiceCMStoSIS.Designer.cs">
+      <DependentUpon>ServiceCMStoSIS.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="NLog.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="NLog.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="logs\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\KBS.KBS.CMSV3.INTERFACE.DATAMODEL\KBS.KBS.CMSV3.INTERFACE.DATAMODEL.csproj">
@@ -93,28 +101,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="job_scheduling_data_2_0.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <Content Include="NLog.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <None Include="NLog.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="logs\" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="ProjectInstallerOracle.resx">
-      <DependentUpon>ProjectInstallerOracle.cs</DependentUpon>
+    <EmbeddedResource Include="ProjectInstaller.resx">
+      <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

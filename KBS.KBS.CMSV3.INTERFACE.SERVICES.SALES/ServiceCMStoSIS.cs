@@ -3,25 +3,21 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.ServiceProcess;
 using System.Text;
+using KBS.KBS.CMSV3.INTERFACE.FUNCTION;
 using Quartz;
 using Quartz.Impl;
-using KBS.KBS.CMSV3.INTERFACE.FUNCTION;
-using KBS.KBS.CMSV3.INTERFACE.DATAMODEL;
-using NLog;
-using License = KBS.KBS.CMSV3.INTERFACE.DATAMODEL.License;
 
-namespace KBS.KBS.CMSV3.INTERFACE.SERVICES.TRANS
+namespace KBS.KBS.CMSV3.INTERFACE.SERVICES.SALES
 {
-    public partial class ServiceOracle : ServiceBase
+    public partial class ServiceCMStoSIS : ServiceBase
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-        private Function CMSV3Function = new Function();
+        private Function CSMV3Function = new Function();
 
-        public ServiceOracle()
+        public ServiceCMStoSIS()
         {
             InitializeComponent();
         }
@@ -62,37 +58,37 @@ namespace KBS.KBS.CMSV3.INTERFACE.SERVICES.TRANS
 
                 //sched.AddCalendar("myHolidays", cal, false,false);
 
-                if (CMSV3Function.GetIsDaily())
+                if (CSMV3Function.GetIsDaily())
                 {
                     logger.Debug("Start Daily");
                     trigger = TriggerBuilder.Create()
                         .WithIdentity("myTrigger")
-                        .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(CMSV3Function.GetHour(),
-                            CMSV3Function.GetMinutes())) // execute job daily at
+                        .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(CSMV3Function.GetHour(),
+                            CSMV3Function.GetMinutes())) // execute job daily at
                         //.ModifiedByCalendar("myHolidays") // but not on holidays
                         .Build();
                 }
-                else if (CMSV3Function.GetIsWeekly())
+                else if (CSMV3Function.GetIsWeekly())
                 {
                     logger.Debug("Start Weekly");
-                    logger.Debug("Day of week is : " + CMSV3Function.GetDayofWeek());
+                    logger.Debug("Day of week is : " + CSMV3Function.GetDayofWeek());
                     trigger = TriggerBuilder.Create()
                         .WithIdentity("myTrigger")
-                        .WithSchedule(CronScheduleBuilder.WeeklyOnDayAndHourAndMinute(CMSV3Function.GetDayofWeek(),
-                            CMSV3Function.GetHour(),
-                            CMSV3Function.GetMinutes())) // execute job daily at
+                        .WithSchedule(CronScheduleBuilder.WeeklyOnDayAndHourAndMinute(CSMV3Function.GetDayofWeek(),
+                            CSMV3Function.GetHour(),
+                            CSMV3Function.GetMinutes())) // execute job daily at
                         //.ModifiedByCalendar("myHolidays") // but not on holidays
                         .Build();
                 }
-                else if (CMSV3Function.GetIsMonthly())
+                else if (CSMV3Function.GetIsMonthly())
                 {
                     logger.Debug("Start Monthly");
-                    logger.Debug("Day of month is : " + CMSV3Function.GetDayofMonth());
+                    logger.Debug("Day of month is : " + CSMV3Function.GetDayofMonth());
                     trigger = TriggerBuilder.Create()
                         .WithIdentity("myTrigger")
-                        .WithSchedule(CronScheduleBuilder.MonthlyOnDayAndHourAndMinute(CMSV3Function.GetDayofMonth(),
-                            CMSV3Function.GetHour(),
-                            CMSV3Function.GetMinutes())) // execute job daily at
+                        .WithSchedule(CronScheduleBuilder.MonthlyOnDayAndHourAndMinute(CSMV3Function.GetDayofMonth(),
+                            CSMV3Function.GetHour(),
+                            CSMV3Function.GetMinutes())) // execute job daily at
                         //.ModifiedByCalendar("myHolidays") // but not on holidays
                         .Build();
                 }
@@ -101,9 +97,8 @@ namespace KBS.KBS.CMSV3.INTERFACE.SERVICES.TRANS
                     trigger = TriggerBuilder.Create()
                         .WithIdentity("myTrigger", "group1")
                         .WithSimpleSchedule(x => x
-                            .WithIntervalInSeconds(CMSV3Function.GetIntervalinSeconds())
+                            .WithIntervalInSeconds(CSMV3Function.GetIntervalinSeconds())
                             .RepeatForever())
-                        .EndAt(DateBuilder.DateOf(22, 0, 0))
                         .Build();
                 }
 
@@ -126,11 +121,10 @@ namespace KBS.KBS.CMSV3.INTERFACE.SERVICES.TRANS
         }
     }
 
-    public class HelloJob : IJob
+     public class HelloJob : IJob
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-        private Function CMSV3Function = new Function();
-        private DataTable DTSales = new DataTable();
+        private Function CSMV3Function = new Function();
 
 
         public void Execute(IJobExecutionContext context)
@@ -150,63 +144,21 @@ namespace KBS.KBS.CMSV3.INTERFACE.SERVICES.TRANS
             //CSMV3Function.ExecExportSalesPriceMaster();
             //CSMV3Function.ExecExportItemMaster();
             //CSMV3Function.ExecExportStoreMaster();
-            //LicenseCheck();
+            ExecuteExportSales();
         }
 
-        private void sales_int()
-        {
-            try
-            {
-                DTSales = CMSV3Function.SelectSales();
-
-
-                StringBuilder sb = new StringBuilder();
-
-
-                IEnumerable<string> columnNames = DTSales.Columns.Cast<DataColumn>().
-                                                  Select(column => column.ColumnName);
-                sb.AppendLine(string.Join("|", columnNames));
-
-                foreach (DataRow row in DTSales.Rows)
-                {
-                    IEnumerable<string> fields = row.ItemArray.Select(field => field.ToString());
-                    sb.AppendLine(string.Join("|", fields));
-
-                }
-                logger.Debug("DATA : " + sb.ToString());
-                File.WriteAllText(CMSV3Function.getCSVLocationOracle() + "test.csv", sb.ToString());
-            }
-            catch (Exception ex)
-            {
-                logger.Error("Messsage : " + ex.Message);
-                logger.Error("Inner Exception : " + ex.InnerException);
-                throw;
-            }
-        }
-
-        private void LicenseCheck()
-        {
-            try
-            {
-                String licenseText;
-                License license = new License();
-
-                CMSV3Function.DisableAllStoreFlagandStatus();
-
-                licenseText = CMSV3Function.GetLicense();
-                licenseText = CMSV3Function.Decrypt(licenseText);
-
-                license = CMSV3Function.ParseLicenseText(licenseText);
-
-                CMSV3Function.ValidateLicenseEndDate(license.EndDate);
-                CMSV3Function.ValidateLicenseStore(Int32.Parse(license.StoreTotal));
-            }
-            catch (Exception ex)
-            {
-                logger.Error("Messsage : " + ex.Message);
-                logger.Error("Inner Exception : " + ex.InnerException);
-                throw;
-            }
-        }
+         public void ExecuteExportSales()
+         {
+             try
+             {
+                 CSMV3Function.GenerateSalesFile();
+             }
+             catch (Exception ex)
+             {
+                 logger.Error("Messsage : " + ex.Message);
+                 logger.Error("Inner Exception : " + ex.InnerException);
+                 throw;
+             }
+         }
     }
 }

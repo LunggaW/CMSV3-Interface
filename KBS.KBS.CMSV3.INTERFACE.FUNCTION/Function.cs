@@ -18,7 +18,6 @@ namespace KBS.KBS.CMSV3.INTERFACE.FUNCTION
         private String ConnectionStringOracle = ConfigurationManager.AppSettings["ConnectionStringOracle"];
         private String ConnectionStringOracleLocal = ConfigurationManager.AppSettings["ConnectionStringOracleLocal"];
         private String ConnectionStringSqlServer = ConfigurationManager.AppSettings["ConnectionStringSqlServer"];
-        private String ConnectionStringSqlServerLocal = ConfigurationManager.AppSettings["ConnectionStringSqlServerLocal"];
 
         private String CSVLocationOracle;
 
@@ -751,6 +750,45 @@ namespace KBS.KBS.CMSV3.INTERFACE.FUNCTION
                     return null;
                 }
             
+
+        }
+
+        public string GenerateSalesFile()
+        {
+            logger.Debug("Start Connect");
+            this.ConnectOracle();
+            logger.Debug("End Connect");
+            try
+            {
+                String Value = "";
+                OracleCommand cmd = new OracleCommand();
+                cmd.Connection = con;
+                cmd.CommandText = "KDSCMSSALES_INT_CSV";
+
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                logger.Debug("Execute Command");
+                logger.Debug(cmd.CommandText.ToString());
+
+                cmd.ExecuteNonQuery();
+                //OracleDataReader dr = cmd.ExecuteReader();
+                logger.Debug("End Execute Command");
+
+
+                logger.Debug("Start Close Connection");
+                this.CloseOracle();
+                logger.Debug("End Close Connection");
+                Value = Decrypt(Value);
+                return Value;
+            }
+            catch (Exception e)
+            {
+                logger.Error("GenerateSalesFile");
+                logger.Error(e.Message);
+                this.CloseOracle();
+                return null;
+            }
+
 
         }
     }
